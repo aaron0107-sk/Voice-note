@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#26293A">
+<meta name="description" content="매일 배운 영어 단어, 숙어, 문장을 말로 기록하는 학습 노트">
+<title>데일리 보이스 노트</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="보이스노트">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper: #F1ECDE;
+    --paper-card: #FFFDF6;
+    --ink: #26293A;
+    --ink-soft: #5C5F72;
+    --teal: #1F5F5B;
+    --teal-soft: #E4EEEC;
+    --amber: #D9962F;
+    --amber-soft: #FBEDD6;
+    --coral: #C85A45;
+    --coral-soft: #F7E3DE;
+    --line: #DCD3BC;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overscroll-behavior-y: none;
+  }
+
+  .app {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: max(20px, env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom));
+    min-height: 100vh;
+  }
+
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 18px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--teal);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .app-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    margin: 2px 0 0;
+    line-height: 1.2;
+  }
+  .streak-badge {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .composer {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(38,41,58,0.05);
+  }
+
+  .tabs, .filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .tab, .filter {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .tab.active[data-cat="단어"], .filter.active[data-filter="단어"] { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .tab.active[data-cat="숙어"], .filter.active[data-filter="숙어"] { background: var(--amber); color: #fff; border-color: var(--amber); }
+  .tab.active[data-cat="문장"], .filter.active[data-filter="문장"] { background: var(--coral); color: #fff; border-color: var(--coral); }
+  .filter.active[data-filter="전체"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .mic-btn {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 50%;
+    border: none;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .mic-btn .mic-rings {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--coral);
+    opacity: 0;
+  }
+  .mic-btn.recording { background: var(--coral); }
+  .mic-btn.recording .mic-rings {
+    opacity: 1;
+    animation: pulse-ring 1.1s ease-out infinite;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  #textInput, #memoInput {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  #textInput { flex: 1; }
+  #memoInput { margin-bottom: 12px; font-size: 13.5px; color: var(--ink-soft); }
+  #textInput:focus, #memoInput:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+
+  .save-btn {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .save-btn:active { transform: scale(0.99); }
+
+  .mic-status {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    min-height: 16px;
+    margin: 8px 0 0;
+  }
+
+  .notebook {
+    position: relative;
+    padding-left: 16px;
+  }
+  .notebook::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background-image: radial-gradient(var(--line) 1.4px, transparent 1.6px);
+    background-size: 100% 14px;
+  }
+
+  .date-heading {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.03em;
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .date-heading:first-child { margin-top: 6px; }
+  .date-heading::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .entry-card {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--teal);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .entry-card[data-cat="숙어"] { border-left-color: var(--amber); }
+  .entry-card[data-cat="문장"] { border-left-color: var(--coral); }
+
+  .entry-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .entry-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+    color: var(--teal);
+    background: var(--teal-soft);
+  }
+  .entry-card[data-cat="숙어"] .entry-tag { color: var(--amber); background: var(--amber-soft); }
+  .entry-card[data-cat="문장"] .entry-tag { color: var(--coral); background: var(--coral-soft); }
+
+  .entry-text {
+    font-family: 'Fraunces', serif;
+    font-size: 16.5px;
+    line-height: 1.4;
+    margin: 0 0 4px;
+    word-break: break-word;
+  }
+  .entry-memo { font-size: 13px; color: var(--ink-soft); margin: 0; }
+  .entry-time { font-size: 11px; color: var(--ink-soft); opacity: 0.7; white-space: nowrap; margin-top: 2px; }
+  .delete-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    opacity: 0.55;
+  }
+  .delete-btn:hover { opacity: 1; }
+
+  .empty-state { text-align: center; padding: 40px 12px; color: var(--ink-soft); }
+  .empty-state .big { font-family: 'Fraunces', serif; font-size: 17px; color: var(--ink); margin-bottom: 4px; }
+
+  .footer-reset { text-align: center; margin-top: 26px; }
+  .footer-reset button {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .install-hint {
+    display: none;
+    background: var(--teal-soft);
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+  .install-hint.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="app-header">
+    <div>
+      <div class="eyebrow">Daily Voice Notes</div>
+      <h1>데일리 보이스 노트</h1>
+    </div>
+    <div class="streak-badge" id="streakBadge">🔥 0일</div>
+  </header>
+
+  <div class="install-hint" id="installHint">홈 화면에 추가하면 앱처럼 아이콘으로 열 수 있어요. 오른쪽 위 메뉴(⋮) → "앱 설치" 또는 "홈 화면에 추가"를 눌러보세요.</div>
+
+  <section class="composer">
+    <div class="tabs" id="categoryTabs">
+      <button class="tab active" data-cat="단어">단어</button>
+      <button class="tab" data-cat="숙어">숙어</button>
+      <button class="tab" data-cat="문장">문장</button>
+    </div>
+
+    <div class="input-row">
+      <button class="mic-btn" id="micBtn" aria-label="음성으로 입력">
+        <span class="mic-rings"></span>
+        <span id="micIcon">🎙️</span>
+      </button>
+      <input id="textInput" type="text" placeholder="오늘 배운 단어·숙어·문장" />
+    </div>
+    <input id="memoInput" type="text" placeholder="뜻이나 메모 (선택)" />
+    <button class="save-btn" id="saveBtn">노트에 기록하기</button>
+    <p class="mic-status" id="micStatus"></p>
+  </section>
+
+  <section class="filters" id="filterTabs">
+    <button class="filter active" data-filter="전체">전체</button>
+    <button class="filter" data-filter="단어">단어</button>
+    <button class="filter" data-filter="숙어">숙어</button>
+    <button class="filter" data-filter="문장">문장</button>
+  </section>
+
+  <section class="notebook" id="entryList"></section>
+
+  <div class="footer-reset">
+    <button id="resetBtn">모든 기록 삭제</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'voice-notes-entries';
+  let entries = [];
+  let activeCat = '단어';
+  let activeFilter = '전체';
+
+  const textInput = document.getElementById('textInput');
+  const memoInput = document.getElementById('memoInput');
+  const saveBtn = document.getElementById('saveBtn');
+  const micBtn = document.getElementById('micBtn');
+  const micIcon = document.getElementById('micIcon');
+  const micStatus = document.getElementById('micStatus');
+  const entryList = document.getElementById('entryList');
+  const streakBadge = document.getElementById('streakBadge');
+  const resetBtn = document.getElementById('resetBtn');
+  const installHint = document.getElementById('installHint');
+
+  document.getElementById('categoryTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    activeCat = btn.dataset.cat;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
+  });
+
+  document.getElementById('filterTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter');
+    if (!btn) return;
+    activeFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter').forEach(t => t.classList.toggle('active', t === btn));
+    render();
+  });
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+
+  function todayKey(d){
+    d = d || new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function formatDateHeading(key){
+    const [y,m,d] = key.split('-').map(Number);
+    const date = new Date(y, m-1, d);
+    const now = new Date();
+    const todayStr = todayKey(now);
+    const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
+    const yStr = todayKey(yesterday);
+    const label = `${m}월 ${d}일`;
+    if (key === todayStr) return `${label} · 오늘`;
+    if (key === yStr) return `${label} · 어제`;
+    const weekday = ['일','월','화','수','목','금','토'][date.getDay()];
+    return `${label} (${weekday})`;
+  }
+
+  function loadEntries(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) {
+      return [];
+    }
+  }
+
+  function saveEntries(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    } catch(e) {
+      console.error('저장 실패', e);
+    }
+  }
+
+  function computeStreak(){
+    if (entries.length === 0) return 0;
+    const dateSet = new Set(entries.map(e => e.date));
+    let streak = 0;
+    let cursor = new Date();
+    if (!dateSet.has(todayKey(cursor))) {
+      cursor.setDate(cursor.getDate()-1);
+    }
+    while (dateSet.has(todayKey(cursor))) {
+      streak++;
+      cursor.setDate(cursor.getDate()-1);
+    }
+    return streak;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function render(){
+    streakBadge.textContent = `🔥 ${computeStreak()}일`;
+
+    const filtered = activeFilter === '전체' ? entries : entries.filter(e => e.category === activeFilter);
+
+    if (filtered.length === 0) {
+      entryList.innerHTML = `
+        <div class="empty-state">
+          <div class="big">아직 기록이 없어요</div>
+          <div>오늘 배운 표현을 첫 줄로 남겨보세요.</div>
+        </div>`;
+      return;
+    }
+
+    const sorted = [...filtered].sort((a,b) => b.createdAt - a.createdAt);
+    const groups = {};
+    sorted.forEach(e => {
+      if (!groups[e.date]) groups[e.date] = [];
+      groups[e.date].push(e);
+    });
+
+    let html = '';
+    Object.keys(groups).sort((a,b) => b.localeCompare(a)).forEach(dateKey => {
+      html += `<div class="date-heading">${formatDateHeading(dateKey)}</div>`;
+      groups[dateKey].forEach(e => {
+        const time = new Date(e.createdAt);
+        const timeStr = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
+        html += `
+          <div class="entry-card" data-cat="${e.category}">
+            <div class="entry-top">
+              <div>
+                <span class="entry-tag">${e.category}</span>
+                <p class="entry-text">${escapeHtml(e.text)}</p>
+                ${e.memo ? `<p class="entry-memo">${escapeHtml(e.memo)}</p>` : ''}
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                <button class="delete-btn" data-id="${e.id}" aria-label="삭제">✕</button>
+                <span class="entry-time">${timeStr}</span>
+              </div>
+            </div>
+          </div>`;
+      });
+    });
+    entryList.innerHTML = html;
+
+    entryList.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        entries = entries.filter(e => e.id !== btn.dataset.id);
+        saveEntries();
+        render();
+      });
+    });
+  }
+
+  saveBtn.addEventListener('click', () => {
+    const text = textInput.value.trim();
+    if (!text) {
+      textInput.focus();
+      return;
+    }
+    const memo = memoInput.value.trim();
+    const now = Date.now();
+    entries.push({
+      id: `${now}-${Math.random().toString(36).slice(2,8)}`,
+      category: activeCat,
+      text,
+      memo,
+      date: todayKey(new Date(now)),
+      createdAt: now
+    });
+    saveEntries();
+    textInput.value = '';
+    memoInput.value = '';
+    render();
+  });
+
+  textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveBtn.click();
+  });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isRecording = false;
+
+  if (SR) {
+    recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      isRecording = true;
+      micBtn.classList.add('recording');
+      micIcon.textContent = '⏹️';
+      micStatus.textContent = '듣고 있어요... 영어로 말해보세요';
+    };
+    recognition.onresult = (e) => {
+      textInput.value = e.results[0][0].transcript;
+    };
+    recognition.onerror = (e) => {
+      micStatus.textContent = e.error === 'not-allowed'
+        ? '마이크 권한이 필요해요. 브라우저 설정을 확인해주세요.'
+        : '음성 인식에 실패했어요. 다시 시도해주세요.';
+    };
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micIcon.textContent = '🎙️';
+      if (!micStatus.textContent.includes('필요') && !micStatus.textContent.includes('실패')) {
+        micStatus.textContent = '';
+      }
+    };
+
+    micBtn.addEventListener('click', () => {
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        try { recognition.start(); } catch(e) { /* already started */ }
+      }
+    });
+  } else {
+    micBtn.disabled = true;
+    micStatus.textContent = '이 브라우저는 음성 인식을 지원하지 않아요. 텍스트로 입력해주세요.';
+  }
+
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('모든 기록을 삭제할까요? 되돌릴 수 없어요.')) return;
+    entries = [];
+    saveEntries();
+    render();
+  });
+
+  // Show install hint if not already running as installed app
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone) {
+    installHint.classList.add('show');
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+  }
+
+  entries = loadEntries();
+  render();
+})();
+</script>
+</body>
+</html>
