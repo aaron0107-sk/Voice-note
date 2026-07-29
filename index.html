@@ -84,6 +84,26 @@
     gap: 5px;
   }
 
+  .view-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .view-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .view-tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
   .composer {
     background: var(--paper-card);
     border: 1px solid var(--line);
@@ -301,7 +321,7 @@
     background: var(--teal-soft);
     border: 1px solid var(--teal);
     border-radius: 10px;
-    padding: 8px 10px;
+    padding: 10px 12px;
     display: none;
   }
   .pron-playall {
@@ -347,10 +367,30 @@
     align-items: center;
     justify-content: center;
   }
-  .pron-note {
-    font-size: 11.5px;
-    color: var(--ink-soft);
+  .pron-note { font-size: 11.5px; color: var(--ink-soft); }
+  .pron-core {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 8px 0 6px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
   }
+  .pron-pos {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--teal);
+    background: #fff;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin: 6px 0 4px;
+  }
+  .pron-def { font-size: 13px; color: var(--ink); margin: 2px 0 2px 4px; line-height: 1.4; }
+  .pron-thesaurus { font-size: 12px; margin-top: 8px; color: var(--ink-soft); line-height: 1.5; }
+  .pron-thesaurus b { color: var(--ink); }
+  .pron-loading { font-size: 12.5px; color: var(--ink-soft); }
 
   .empty-state { text-align: center; padding: 40px 12px; color: var(--ink-soft); }
   .empty-state .big { font-family: 'Fraunces', serif; font-size: 17px; color: var(--ink); margin-bottom: 4px; }
@@ -377,6 +417,82 @@
     line-height: 1.4;
   }
   .install-hint.show { display: block; }
+
+  /* Review / flashcard */
+  .review-progress {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .flashcard {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 30px 18px;
+    text-align: center;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .flashcard-cat {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--teal);
+    background: var(--teal-soft);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .flashcard-kr {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .flashcard-en {
+    font-family: 'Fraunces', serif;
+    font-size: 16.5px;
+    color: var(--coral);
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+    width: 100%;
+    display: none;
+  }
+  .flip-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .review-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .review-nav button {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .review-empty {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 30px 10px;
+  }
 </style>
 </head>
 <body>
@@ -392,46 +508,90 @@
 
   <div class="install-hint" id="installHint">홈 화면에 추가하면 앱처럼 아이콘으로 열 수 있어요. 오른쪽 위 메뉴(⋮) → "앱 설치" 또는 "홈 화면에 추가"를 눌러보세요.</div>
 
-  <section class="composer">
-    <div class="tabs" id="categoryTabs">
-      <button class="tab active" data-cat="단어">단어</button>
-      <button class="tab" data-cat="숙어">숙어</button>
-      <button class="tab" data-cat="문장">문장</button>
+  <div class="view-tabs" id="viewTabs">
+    <button class="view-tab active" data-view="note">노트</button>
+    <button class="view-tab" data-view="review">복습</button>
+  </div>
+
+  <div id="noteView">
+    <section class="composer">
+      <div class="tabs" id="categoryTabs">
+        <button class="tab active" data-cat="단어">단어</button>
+        <button class="tab" data-cat="숙어">숙어</button>
+        <button class="tab" data-cat="문장">문장</button>
+      </div>
+
+      <div class="input-row">
+        <button class="mic-btn" id="micBtn" aria-label="음성으로 입력">
+          <span class="mic-rings"></span>
+          <span id="micIcon">🎙️</span>
+        </button>
+        <input id="textInput" type="text" placeholder="오늘 배운 단어·숙어·문장" />
+      </div>
+      <input id="memoInput" type="text" placeholder="뜻이나 메모 (선택)" />
+      <button class="save-btn" id="saveBtn">노트에 기록하기</button>
+      <p class="mic-status" id="micStatus"></p>
+    </section>
+
+    <section class="filters" id="filterTabs">
+      <button class="filter active" data-filter="전체">전체</button>
+      <button class="filter" data-filter="단어">단어</button>
+      <button class="filter" data-filter="숙어">숙어</button>
+      <button class="filter" data-filter="문장">문장</button>
+    </section>
+
+    <section class="notebook" id="entryList"></section>
+
+    <div class="footer-reset">
+      <button id="resetBtn">모든 기록 삭제</button>
+    </div>
+  </div>
+
+  <div id="reviewView" style="display:none;">
+    <section class="filters" id="reviewFilterTabs">
+      <button class="filter active" data-filter="전체">전체</button>
+      <button class="filter" data-filter="단어">단어</button>
+      <button class="filter" data-filter="숙어">숙어</button>
+      <button class="filter" data-filter="문장">문장</button>
+    </section>
+
+    <div class="review-progress" id="reviewProgress"></div>
+
+    <div class="flashcard" id="flashcard">
+      <div class="flashcard-cat" id="flashcardCat"></div>
+      <div class="flashcard-kr" id="flashcardKr">-</div>
+      <div class="flashcard-en" id="flashcardEn"></div>
+      <button class="flip-btn" id="flipBtn">정답 보기</button>
     </div>
 
-    <div class="input-row">
-      <button class="mic-btn" id="micBtn" aria-label="음성으로 입력">
-        <span class="mic-rings"></span>
-        <span id="micIcon">🎙️</span>
-      </button>
-      <input id="textInput" type="text" placeholder="오늘 배운 단어·숙어·문장" />
+    <div class="review-nav">
+      <button id="prevBtn">◀ 이전</button>
+      <button id="shuffleBtn">🔀 섞기</button>
+      <button id="nextBtn">다음 ▶</button>
     </div>
-    <input id="memoInput" type="text" placeholder="뜻이나 메모 (선택)" />
-    <button class="save-btn" id="saveBtn">노트에 기록하기</button>
-    <p class="mic-status" id="micStatus"></p>
-  </section>
 
-  <section class="filters" id="filterTabs">
-    <button class="filter active" data-filter="전체">전체</button>
-    <button class="filter" data-filter="단어">단어</button>
-    <button class="filter" data-filter="숙어">숙어</button>
-    <button class="filter" data-filter="문장">문장</button>
-  </section>
-
-  <section class="notebook" id="entryList"></section>
-
-  <div class="footer-reset">
-    <button id="resetBtn">모든 기록 삭제</button>
+    <div class="review-empty" id="reviewEmpty" style="display:none;">복습할 기록이 없어요. 노트 탭에서 먼저 기록해보세요.</div>
   </div>
 </div>
 
 <script>
 (function(){
   const STORAGE_KEY = 'voice-notes-entries';
-  const PRON_CACHE_KEY = 'voice-notes-pron-cache-v1';
+  const DICT_CACHE_KEY = 'voice-notes-dict-cache-v1';
+  const TR_CACHE_KEY = 'voice-notes-tr-cache-v1';
+
+  const POS_KR = {
+    noun: '명사', verb: '동사', adjective: '형용사', adverb: '부사',
+    pronoun: '대명사', preposition: '전치사', conjunction: '접속사',
+    interjection: '감탄사', exclamation: '감탄사', determiner: '한정사',
+    article: '관사', numeral: '수사'
+  };
+  function posLabel(pos){ return POS_KR[pos] || pos; }
+
   let entries = [];
   let activeCat = '단어';
   let activeFilter = '전체';
+  let currentView = 'note';
 
   const textInput = document.getElementById('textInput');
   const memoInput = document.getElementById('memoInput');
@@ -443,20 +603,38 @@
   const streakBadge = document.getElementById('streakBadge');
   const resetBtn = document.getElementById('resetBtn');
   const installHint = document.getElementById('installHint');
+  const noteView = document.getElementById('noteView');
+  const reviewView = document.getElementById('reviewView');
 
   document.getElementById('categoryTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.tab');
     if (!btn) return;
     activeCat = btn.dataset.cat;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
+    document.querySelectorAll('#categoryTabs .tab').forEach(t => t.classList.toggle('active', t === btn));
   });
 
   document.getElementById('filterTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.filter');
     if (!btn) return;
     activeFilter = btn.dataset.filter;
-    document.querySelectorAll('.filter').forEach(t => t.classList.toggle('active', t === btn));
+    document.querySelectorAll('#filterTabs .filter').forEach(t => t.classList.toggle('active', t === btn));
     render();
+  });
+
+  document.getElementById('viewTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-tab');
+    if (!btn) return;
+    currentView = btn.dataset.view;
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t === btn));
+    if (currentView === 'note') {
+      noteView.style.display = '';
+      reviewView.style.display = 'none';
+    } else {
+      noteView.style.display = 'none';
+      reviewView.style.display = '';
+      buildReviewOrder();
+      renderFlashcard();
+    }
   });
 
   function pad(n){ return n.toString().padStart(2,'0'); }
@@ -484,17 +662,10 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : [];
-    } catch(e) {
-      return [];
-    }
+    } catch(e) { return []; }
   }
-
   function saveEntries(){
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    } catch(e) {
-      console.error('저장 실패', e);
-    }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch(e) {}
   }
 
   function computeStreak(){
@@ -502,13 +673,8 @@
     const dateSet = new Set(entries.map(e => e.date));
     let streak = 0;
     let cursor = new Date();
-    if (!dateSet.has(todayKey(cursor))) {
-      cursor.setDate(cursor.getDate()-1);
-    }
-    while (dateSet.has(todayKey(cursor))) {
-      streak++;
-      cursor.setDate(cursor.getDate()-1);
-    }
+    if (!dateSet.has(todayKey(cursor))) cursor.setDate(cursor.getDate()-1);
+    while (dateSet.has(todayKey(cursor))) { streak++; cursor.setDate(cursor.getDate()-1); }
     return streak;
   }
 
@@ -516,6 +682,10 @@
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function isWordLookupEligible(entry){
+    return entry.category === '단어' && !/\s/.test(entry.text.trim());
   }
 
   function render(){
@@ -545,6 +715,7 @@
       groups[dateKey].forEach(e => {
         const time = new Date(e.createdAt);
         const timeStr = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
+        const btnLabel = isWordLookupEligible(e) ? '📖 사전 보기' : '🔊 읽어주기';
         html += `
           <div class="entry-card" data-cat="${e.category}">
             <div class="entry-top">
@@ -559,7 +730,7 @@
               </div>
             </div>
             <div class="entry-actions">
-              <button class="listen-btn" data-id="${e.id}">🔊 발음 듣기</button>
+              <button class="listen-btn" data-id="${e.id}">${btnLabel}</button>
             </div>
             <div class="pron-panel" id="pron-${e.id}"></div>
           </div>`;
@@ -570,17 +741,12 @@
 
   saveBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
-    if (!text) {
-      textInput.focus();
-      return;
-    }
+    if (!text) { textInput.focus(); return; }
     const memo = memoInput.value.trim();
     const now = Date.now();
     entries.push({
       id: `${now}-${Math.random().toString(36).slice(2,8)}`,
-      category: activeCat,
-      text,
-      memo,
+      category: activeCat, text, memo,
       date: todayKey(new Date(now)),
       createdAt: now
     });
@@ -590,9 +756,7 @@
     render();
   });
 
-  textInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') saveBtn.click();
-  });
+  textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBtn.click(); });
 
   // ---------- Speech recognition (input) ----------
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -611,9 +775,7 @@
       micIcon.textContent = '⏹️';
       micStatus.textContent = '듣고 있어요... 영어로 말해보세요';
     };
-    recognition.onresult = (e) => {
-      textInput.value = e.results[0][0].transcript;
-    };
+    recognition.onresult = (e) => { textInput.value = e.results[0][0].transcript; };
     recognition.onerror = (e) => {
       micStatus.textContent = e.error === 'not-allowed'
         ? '마이크 권한이 필요해요. 브라우저 설정을 확인해주세요.'
@@ -629,28 +791,44 @@
     };
 
     micBtn.addEventListener('click', () => {
-      if (isRecording) {
-        recognition.stop();
-      } else {
-        try { recognition.start(); } catch(e) { /* already started */ }
-      }
+      if (isRecording) recognition.stop();
+      else { try { recognition.start(); } catch(e) {} }
     });
   } else {
     micBtn.disabled = true;
     micStatus.textContent = '이 브라우저는 음성 인식을 지원하지 않아요. 텍스트로 입력해주세요.';
   }
 
-  // ---------- Pronunciation lookup (dictionary + TTS fallback) ----------
-  function getPronCache(){
-    try {
-      const raw = localStorage.getItem(PRON_CACHE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch(e) { return {}; }
+  // ---------- Caches ----------
+  function getCache(key){
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : {}; }
+    catch(e) { return {}; }
   }
-  function savePronCache(cache){
-    try { localStorage.setItem(PRON_CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
+  function saveCache(key, obj){
+    try { localStorage.setItem(key, JSON.stringify(obj)); } catch(e) {}
   }
 
+  // ---------- Translation (MyMemory, free, no key) ----------
+  async function translateToKorean(text){
+    const clean = text.trim();
+    if (!clean) return null;
+    const cache = getCache(TR_CACHE_KEY);
+    const key = clean.toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
+    try {
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|ko`);
+      const data = await res.json();
+      const translated = data && data.responseData && data.responseData.translatedText
+        ? data.responseData.translatedText : null;
+      cache[key] = translated;
+      saveCache(TR_CACHE_KEY, cache);
+      return translated;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  // ---------- Dictionary lookup (dictionaryapi.dev, free, no key) ----------
   function guessAccent(url){
     const u = (url || '').toLowerCase();
     if (u.includes('-us.') || u.includes('_us.') || u.includes('/us/')) return { flag: '🇺🇸', label: '미국식' };
@@ -660,30 +838,34 @@
 
   async function lookupWord(word){
     const key = word.toLowerCase();
-    const cache = getPronCache();
+    const cache = getCache(DICT_CACHE_KEY);
     if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
 
     try {
       const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
-      if (!res.ok) {
-        cache[key] = null;
-        savePronCache(cache);
-        return null;
-      }
+      if (!res.ok) { cache[key] = null; saveCache(DICT_CACHE_KEY, cache); return null; }
       const data = await res.json();
       const entry = data[0];
       const seen = new Set();
       const phonetics = (entry.phonetics || [])
         .filter(p => p.audio)
         .map(p => ({ text: p.text || entry.phonetic || '', audio: p.audio, accent: guessAccent(p.audio) }))
-        .filter(p => {
-          if (seen.has(p.audio)) return false;
-          seen.add(p.audio);
-          return true;
-        });
-      const result = { phonetic: entry.phonetic || (phonetics[0] && phonetics[0].text) || '', phonetics };
+        .filter(p => { if (seen.has(p.audio)) return false; seen.add(p.audio); return true; });
+
+      const meanings = (entry.meanings || []).map(m => ({
+        partOfSpeech: m.partOfSpeech,
+        definitions: (m.definitions || []).map(d => d.definition).filter(Boolean),
+        synonyms: [...new Set([...(m.synonyms || []), ...(m.definitions || []).flatMap(d => d.synonyms || [])])],
+        antonyms: [...new Set([...(m.antonyms || []), ...(m.definitions || []).flatMap(d => d.antonyms || [])])]
+      }));
+
+      const result = {
+        phonetic: entry.phonetic || (phonetics[0] && phonetics[0].text) || '',
+        phonetics,
+        meanings
+      };
       cache[key] = result;
-      savePronCache(cache);
+      saveCache(DICT_CACHE_KEY, cache);
       return result;
     } catch(e) {
       return undefined; // network error — do not cache
@@ -706,6 +888,56 @@
     const audio = new Audio(urls[i]);
     audio.addEventListener('ended', () => playSequentially(urls, i+1));
     audio.play().catch(() => playSequentially(urls, i+1));
+  }
+
+  async function buildDictPanelHtml(entry, dict){
+    let html = '';
+
+    if (dict.phonetics && dict.phonetics.length > 0) {
+      if (dict.phonetics.length > 1) html += `<button class="pron-playall">⏵ 전체재생</button>`;
+      html += dict.phonetics.map(p => `
+        <div class="pron-row">
+          <span class="pron-flag">${p.accent.flag}</span>
+          <span class="pron-label">${p.accent.label}</span>
+          <span class="pron-ipa">${escapeHtml(p.text)}</span>
+          <button class="pron-play" data-audio="${p.audio}">▶</button>
+        </div>`).join('');
+    } else if (dict.phonetic) {
+      html += `<div class="pron-row"><span class="pron-ipa">${escapeHtml(dict.phonetic)}</span><button class="pron-play" data-tts-id="${entry.id}">▶</button></div>`;
+    }
+
+    // Core one-word Korean gloss
+    const core = await translateToKorean(entry.text);
+    if (core) html += `<div class="pron-core">${escapeHtml(core)}</div>`;
+
+    // Definitions grouped by part of speech (cap 2 POS x 2 defs)
+    const meaningsCap = (dict.meanings || []).slice(0, 2);
+    for (const m of meaningsCap) {
+      const defsCap = m.definitions.slice(0, 2);
+      if (defsCap.length === 0) continue;
+      const translated = await Promise.all(defsCap.map(d => translateToKorean(d)));
+      html += `<div class="pron-pos">${escapeHtml(posLabel(m.partOfSpeech))}</div>`;
+      translated.forEach((t, idx) => {
+        html += `<div class="pron-def">${idx+1}. ${escapeHtml(t || defsCap[idx])}</div>`;
+      });
+    }
+
+    // Synonyms / antonyms (cap 5 each), translated
+    const allSyn = [...new Set(meaningsCap.flatMap(m => m.synonyms))].slice(0, 5);
+    const allAnt = [...new Set(meaningsCap.flatMap(m => m.antonyms))].slice(0, 5);
+
+    if (allSyn.length > 0) {
+      const trSyn = await Promise.all(allSyn.map(s => translateToKorean(s)));
+      const parts = allSyn.map((s, idx) => `${s}${trSyn[idx] ? `(${trSyn[idx]})` : ''}`);
+      html += `<div class="pron-thesaurus"><b>유사어</b> ${escapeHtml(parts.join(', '))}</div>`;
+    }
+    if (allAnt.length > 0) {
+      const trAnt = await Promise.all(allAnt.map(a => translateToKorean(a)));
+      const parts = allAnt.map((a, idx) => `${a}${trAnt[idx] ? `(${trAnt[idx]})` : ''}`);
+      html += `<div class="pron-thesaurus"><b>반의어</b> ${escapeHtml(parts.join(', '))}</div>`;
+    }
+
+    return html;
   }
 
   entryList.addEventListener('click', async (ev) => {
@@ -742,12 +974,8 @@
       const entry = entries.find(x => x.id === id);
       if (!entry) return;
       const panel = document.getElementById(`pron-${id}`);
-      const isWordLookup = entry.category === '단어' && !/\s/.test(entry.text.trim());
 
-      if (!isWordLookup) {
-        speak(entry.text, 'en-US');
-        return;
-      }
+      if (!isWordLookupEligible(entry)) { speak(entry.text, 'en-US'); return; }
 
       if (panel.dataset.loaded === '1') {
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -756,38 +984,28 @@
 
       const originalLabel = listenBtn.textContent;
       listenBtn.textContent = '⏳ 찾는 중...';
-      const result = await lookupWord(entry.text.trim());
+      panel.innerHTML = `<div class="pron-loading">사전과 뜻을 불러오는 중...</div>`;
+      panel.style.display = 'block';
+
+      const dict = await lookupWord(entry.text.trim());
       listenBtn.textContent = originalLabel;
 
-      if (result === undefined) {
-        speak(entry.text, 'en-US');
-        return;
-      }
-
-      if (result === null) {
-        panel.innerHTML = `<div class="pron-note">사전에서 찾지 못했어요. 대신 읽어드릴게요.</div>
-          <div class="pron-row"><button class="pron-play" data-tts-id="${entry.id}">▶</button><span class="pron-note">${escapeHtml(entry.text)}</span></div>`;
+      if (dict === undefined) {
+        panel.innerHTML = `<div class="pron-note">인터넷 연결을 확인해주세요.</div>`;
         panel.dataset.loaded = '1';
-        panel.style.display = 'block';
+        return;
+      }
+      if (dict === null) {
+        const core = await translateToKorean(entry.text);
+        panel.innerHTML = `<div class="pron-note">사전에서 찾지 못했어요.</div>
+          ${core ? `<div class="pron-core">${escapeHtml(core)}</div>` : ''}
+          <div class="pron-row"><button class="pron-play" data-tts-id="${entry.id}">▶</button><span class="pron-note">읽어주기</span></div>`;
+        panel.dataset.loaded = '1';
         return;
       }
 
-      if (!result.phonetics || result.phonetics.length === 0) {
-        panel.innerHTML = result.phonetic
-          ? `<div class="pron-row"><span class="pron-ipa">${escapeHtml(result.phonetic)}</span><button class="pron-play" data-tts-id="${entry.id}">▶</button></div>`
-          : `<div class="pron-row"><span class="pron-note">발음 정보가 없어요.</span><button class="pron-play" data-tts-id="${entry.id}">▶</button></div>`;
-      } else {
-        const rows = result.phonetics.map(p => `
-          <div class="pron-row">
-            <span class="pron-flag">${p.accent.flag}</span>
-            <span class="pron-label">${p.accent.label}</span>
-            <span class="pron-ipa">${escapeHtml(p.text)}</span>
-            <button class="pron-play" data-audio="${p.audio}">▶</button>
-          </div>`).join('');
-        panel.innerHTML = `${result.phonetics.length > 1 ? `<button class="pron-playall">⏵ 전체재생</button>` : ''}${rows}`;
-      }
+      panel.innerHTML = await buildDictPanelHtml(entry, dict);
       panel.dataset.loaded = '1';
-      panel.style.display = 'block';
     }
   });
 
@@ -798,10 +1016,106 @@
     render();
   });
 
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (!isStandalone) {
-    installHint.classList.add('show');
+  // ---------- Review / flashcard tab ----------
+  let reviewFilter = '전체';
+  let reviewOrder = [];
+  let reviewIndex = 0;
+  let reviewRevealed = false;
+  let reviewToken = 0;
+
+  const reviewProgress = document.getElementById('reviewProgress');
+  const flashcard = document.getElementById('flashcard');
+  const flashcardCat = document.getElementById('flashcardCat');
+  const flashcardKr = document.getElementById('flashcardKr');
+  const flashcardEn = document.getElementById('flashcardEn');
+  const flipBtn = document.getElementById('flipBtn');
+  const reviewEmpty = document.getElementById('reviewEmpty');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+
+  document.getElementById('reviewFilterTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter');
+    if (!btn) return;
+    reviewFilter = btn.dataset.filter;
+    document.querySelectorAll('#reviewFilterTabs .filter').forEach(t => t.classList.toggle('active', t === btn));
+    buildReviewOrder();
+    renderFlashcard();
+  });
+
+  function buildReviewOrder(){
+    const pool = reviewFilter === '전체' ? entries : entries.filter(e => e.category === reviewFilter);
+    reviewOrder = pool.map(e => e.id);
+    reviewIndex = 0;
   }
+
+  function shuffleArray(arr){
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  shuffleBtn.addEventListener('click', () => {
+    shuffleArray(reviewOrder);
+    reviewIndex = 0;
+    renderFlashcard();
+  });
+
+  prevBtn.addEventListener('click', () => {
+    if (reviewOrder.length === 0) return;
+    reviewIndex = (reviewIndex - 1 + reviewOrder.length) % reviewOrder.length;
+    renderFlashcard();
+  });
+  nextBtn.addEventListener('click', () => {
+    if (reviewOrder.length === 0) return;
+    reviewIndex = (reviewIndex + 1) % reviewOrder.length;
+    renderFlashcard();
+  });
+
+  flipBtn.addEventListener('click', () => {
+    reviewRevealed = !reviewRevealed;
+    flashcardEn.style.display = reviewRevealed ? 'block' : 'none';
+    flipBtn.textContent = reviewRevealed ? '뜻만 보기' : '정답 보기';
+  });
+
+  async function renderFlashcard(){
+    reviewToken++;
+    const myToken = reviewToken;
+    reviewRevealed = false;
+    flipBtn.textContent = '정답 보기';
+    flashcardEn.style.display = 'none';
+
+    if (reviewOrder.length === 0) {
+      flashcard.style.display = 'none';
+      document.querySelector('.review-nav').style.display = 'none';
+      reviewProgress.textContent = '';
+      reviewEmpty.style.display = 'block';
+      return;
+    }
+    flashcard.style.display = '';
+    document.querySelector('.review-nav').style.display = '';
+    reviewEmpty.style.display = 'none';
+
+    const entry = entries.find(e => e.id === reviewOrder[reviewIndex]);
+    if (!entry) return;
+
+    reviewProgress.textContent = `${reviewIndex + 1} / ${reviewOrder.length}`;
+    flashcardCat.textContent = entry.category;
+    flashcardEn.textContent = entry.text;
+
+    if (entry.memo && entry.memo.trim()) {
+      flashcardKr.textContent = entry.memo.trim();
+    } else {
+      flashcardKr.textContent = '뜻을 불러오는 중...';
+      const tr = await translateToKorean(entry.text);
+      if (myToken !== reviewToken) return; // user navigated away
+      flashcardKr.textContent = tr ? `${tr} (자동 번역)` : '뜻을 가져오지 못했어요';
+    }
+  }
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone) installHint.classList.add('show');
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
